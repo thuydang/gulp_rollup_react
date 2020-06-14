@@ -185,7 +185,7 @@ function watchPaths() {
   //watch(`${paths.sass}/*.scss`, styles)
   //watch(`${paths.css}/*.css`, styles)
   watch(`${paths.public}/**/*.html`).on("change", reload)
-  watch([`${paths.js}/*.js`, `${paths.css}/*.css`, `!${paths.js}/*.min.js`], build_dev).on("change", reload)
+  watch([`${paths.components}/**/*.js`, `${paths.components}/**/*.css`, `${paths.css}/*.css`, `!${paths.js}/*.min.js`], build_dev).on("change", reload)
 }
 
 // Generate all assets
