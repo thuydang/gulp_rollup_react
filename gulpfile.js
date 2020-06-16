@@ -25,6 +25,7 @@ const spawn = require('child_process').spawn
 const uglify = require('gulp-uglify-es').default
 
 // rollup plugins
+const del = require('rollup-plugin-delete')
 const rollup = require('rollup');
 const babel = require('@rollup/plugin-babel').default
 const rollupResolve = require('@rollup/plugin-node-resolve').default
@@ -67,7 +68,8 @@ function build_dev(){
   return rollup.rollup({
     input: `${paths.src}/index.js`,
     plugins: [
-      // Set env to compile React for dev or prod. Required by React.
+      del({ targets: './public/dist/*' }),
+      // Set env to compile React for dev or prod
       replace({
         //'process.env.NODE_ENV': JSON.stringify( 'production' )
         'process.env.NODE_ENV': JSON.stringify( 'development' )
@@ -82,7 +84,11 @@ function build_dev(){
           ignore: ['*.css', /.(css|json|svg)$/],
           babelHelpers: 'bundled',
           plugins: [
-
+            "@babel/plugin-proposal-class-properties", // react class properties.
+            ["react-css-modules", {
+              autoResolveMultipleImports: true, 
+              generateScopedName: "[name]_[local]__[hash:base64:5]" // Should be the same as postcss-modules. TODO 1 underscore less.
+            }], 
           ],
           babelrc: false
         }
@@ -94,9 +100,13 @@ function build_dev(){
           postcssModules({
             getJSON (id, exportTokens) {
               cssExportMap[id] = exportTokens;
-            }
-          })
-        ],
+            },
+            generateScopedName: "[name]__[local]___[hash:base64:5]",
+            hashPrefix: "prefix",
+            scopeBehaviour: "global",
+            globalModulePaths: [/node_modules/, /.styles/],            
+          }), // postcssModules
+        ], // plugins
         getExportNamed: false,
         getExport (id) {
           return cssExportMap[id];
@@ -146,8 +156,8 @@ function asyncRunServer() {
 function initBrowserSync() {
     browserSync.init(
       [
-        `${paths.css}/*.css`,
-        `${paths.js}/*.js`,
+        `${paths.build}/*.css`,
+        `${paths.build}/*.js`,
         `${paths.public}/*.html`
       ], {
         // https://www.browsersync.io/docs/options/#option-proxy
