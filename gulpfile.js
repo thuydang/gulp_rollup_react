@@ -95,6 +95,7 @@ function build_dev(){
       ),
       //peerDepsExternal(),
       postcss({
+        modules: true, // Enable CSS modules or set options for postcss-modules.
         plugins: [
           // https://medium.com/grandata-engineering/how-i-set-up-a-react-component-library-with-rollup-be6ccb700333
           postcssModules({
@@ -118,8 +119,14 @@ function build_dev(){
         //use: ['sass'],
       }),
       image(),
-      rollupResolve(),
-      commonJs()
+      rollupResolve({
+        extensions: [ '.mjs', '.js', '.jsx', '.json', '.css'],
+        // use "jsnext:main" if possible
+        // see https://github.com/rollup/rollup/wiki/jsnext:main
+        jsnext: true
+      }),
+      commonJs(),
+      //(process.env.NODE_ENV === 'production' && uglify()),
     ]
   }).then(function(bundle) {
     return bundle.write({
