@@ -196,7 +196,7 @@ function initBrowserSync() {
           baseDir: `${paths.public}`,
           index: "index.html",
           middleware: function (req, res, next) {
-            res.setHeader("Content-Security-Policy", "base-uri 'self'; connect-src 'self' 'unsafe-inline'; font-src 'self' data: 'unsafe-inline'; frame-ancestors 'self' 'unsafe-inline'; frame-src 'self' 'unsafe-inline'; img-src 'self' 'unsafe-inline' data:; manifest-src 'self' 'unsafe-inline'; media-src 'self' 'unsafe-inline' data:; object-src 'self' 'unsafe-inline'; script-src 'self' https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'");
+            res.setHeader("Content-Security-Policy", "base-uri 'self'; connect-src 'self' 192.168.39.162:3000 'unsafe-inline'; font-src 'self' data: 'unsafe-inline'; frame-ancestors 'self' 'unsafe-inline'; frame-src 'self' 'unsafe-inline'; img-src 'self' 'unsafe-inline' data:; manifest-src 'self' 'unsafe-inline'; media-src 'self' 'unsafe-inline' data:; object-src 'self' 'unsafe-inline'; script-src 'self' https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'");
             res.setHeader("X-Content-Security-Policy", "base-uri 'self'; connect-src 'self'; font-src 'self' data:; frame-ancestors 'self'; frame-src 'self'; img-src 'self'; manifest-src 'self'; media-src 'self'; object-src 'self'; script-src 'self' https://unpkg.com; style-src 'self'");
             next();
           }
