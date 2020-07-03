@@ -5,6 +5,7 @@ import bs from 'bootstrap/dist/css/bootstrap.css';
 import idxsty from '../styles/index.css';
 import appsty from './App.css';
 import Modal from "./Modal";
+import axios from "axios";
 
 // Passing cssModules to reacstrap Modal
 // https://stackoverflow.com/a/62565909/707704
@@ -12,33 +13,6 @@ let styles = Object.assign({}, bs)
 
 
 //const cx = cn.bind(styles);
-
-const todoItems = [
-  {
-    id: 1,
-    title: "Go to Market",
-    description: "Buy ingredients to prepare dinner",
-    completed: true
-  },
-  {
-    id: 2,
-    title: "Study",
-    description: "Read Algebra and History textbook for upcoming test",
-    completed: false
-  },
-  {
-    id: 3,
-    title: "Sally's books",
-    description: "Go to library to rent sally's books",
-    completed: true
-  },
-  {
-    id: 4,
-    title: "Article",
-    description: "Write article on how to use django with react",
-    completed: false
-  }
-];
 
 class App extends Component {
   constructor(props) {
@@ -51,18 +25,34 @@ class App extends Component {
         description: "",
         completed: false
       },
-      todoList: todoItems
+      todoList: []
     };
   }
+  refreshList = () => {
+    axios
+      .get("http://192.168.39.162:3000/api/servicelisting/")
+      .then(res => this.setState({ todoList: res.data }))
+      .catch(err => console.log(err));
+  };
   toggle = () => {
     this.setState({ modal: !this.state.modal });
   };
   handleSubmit = item => {
     this.toggle();
-    alert("save" + JSON.stringify(item));
+    if (item.id) {
+      axios
+        .put(`http://192.168.39.162:3000/api/servicelisting/${item.id}/`, item)
+        .then(res => this.refreshList());
+      return;
+    }
+    axios
+      .post("http://192.168.39.162:3000/api/servicelisting/", item)
+      .then(res => this.refreshList());
   };
   handleDelete = item => {
-    alert("delete" + JSON.stringify(item));
+    axios
+      .delete(`http://192.168.39.162:3000/api/servicelisting/${item.id}`)
+      .then(res => this.refreshList());
   };
   createItem = () => {
     const item = { title: "", description: "", completed: false };
@@ -71,6 +61,10 @@ class App extends Component {
   editItem = item => {
     this.setState({ activeItem: item, modal: !this.state.modal });
   };
+  // 
+  componentDidMount() {
+    this.refreshList();
+  }
   displayCompleted = status => {
     if (status) {
       return this.setState({ viewCompleted: true });
