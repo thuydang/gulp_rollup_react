@@ -3,8 +3,13 @@ import React, { Component } from "react";
 import cn from 'classnames';
 import bs from 'bootstrap/dist/css/bootstrap.css';
 import idxsty from '../styles/index.css';
-import styles from './App.css';
-//styles = Object.assign({}, bs)
+import appsty from './App.css';
+import Modal from "./Modal";
+import axios from "axios";
+
+// Passing cssModules to reacstrap Modal
+// https://stackoverflow.com/a/62565909/707704
+let styles = Object.assign({}, bs)
 //const cx = cn.bind(styles);
 
 const todoItems = [
@@ -38,6 +43,7 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      modal: false,
       viewCompleted: false,
       activeItem: {
         title: "",
@@ -47,6 +53,56 @@ class App extends Component {
       todoList: todoItems
     };
   }
+  refreshList = () => {
+    axios
+      .get("http://192.168.39.162:3000/api/servicelisting/")
+      .then(res => this.setState({ todoList: res.data }))
+      .catch(err => console.log(err));
+  };
+  toggle = () => {
+    this.setState({ modal: !this.state.modal });
+  };
+  handleSubmitLocal = item => {
+    this.toggle();
+    if (item.id) {
+      // NEVER mutate this.state directly, as calling setState() afterwards may replace the mutation you made. Treat this.state as if it were immutable.React.Component.
+      var joined = this.state.todoList.concat(item);
+      this.setState({ todoList: joined });
+      return;
+    }
+    item.id = this.state.todoList.length + 1;
+    var joined = this.state.todoList.concat(item);
+    this.setState({ todoList: joined });
+  };
+  handleSubmit = item => {
+    this.toggle();
+    if (item.id) {
+      axios
+        .put(`http://192.168.39.162:3000/api/servicelisting/${item.id}/`, item)
+        .then(res => this.refreshList());
+      return;
+    }
+    axios
+      .post("http://192.168.39.162:3000/api/servicelisting/", item)
+      .then(res => this.refreshList());
+  };
+  handleDelete = item => {
+    axios
+      .delete(`http://192.168.39.162:3000/api/servicelisting/${item.id}`)
+      .then(res => this.refreshList());
+  };
+  createItem = () => {
+    const item = { title: "", description: "", completed: false };
+    this.setState({ activeItem: item, modal: !this.state.modal });
+  };
+  editItem = item => {
+    this.setState({ activeItem: item, modal: !this.state.modal });
+  };
+  //
+  componentDidMount() {
+    this.refreshList();
+  }
+
   displayCompleted = status => {
     if (status) {
       return this.setState({ viewCompleted: true });
@@ -88,8 +144,18 @@ class App extends Component {
           {item.title}
         </span>
         <span>
-          <button styleName="btn btn-secondary mr-2"> Edit </button>
-          <button styleName="btn btn-danger">Delete </button>
+          <button
+            styleName="btn btn-secondary mr-2"
+            onClick={() => this.editItem(item)}
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => this.handleDelete(item)}
+            styleName="btn btn-danger"
+          >
+            Delete <
+        /button>
         </span>
       </li>
     ));
@@ -102,7 +168,12 @@ class App extends Component {
           <div styleName="col-md-6 col-sm-10 mx-auto p-0">
             <div styleName="card p-3">
               <div styleName="">
-                <button styleName="btn btn-primary">Add task</button>
+                <button
+                  onClick={this.createItem}
+                  styleName="btn btn-primary"
+                >
+                  Add task
+                </button>
               </div>
               {this.renderTabList()}
               <ul styleName="list-group list-group-flush">
@@ -111,6 +182,15 @@ class App extends Component {
             </div>
           </div>
         </div>
+        {this.state.modal ? (
+          <Modal
+            globalCssModule={styles}
+            //className={cn(styles.modal, styles.fade, styles.show, styles['modal-header'])}
+            activeItem={this.state.activeItem}
+            toggle={this.toggle}
+            onSave={this.handleSubmitLocal}
+          />
+        ) : null}
       </main>
     );
   }

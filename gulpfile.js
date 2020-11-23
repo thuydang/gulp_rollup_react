@@ -30,10 +30,13 @@ const rollup = require('rollup');
 const babel = require('@rollup/plugin-babel').default
 const rollupResolve = require('@rollup/plugin-node-resolve').default
 const commonJs = require('@rollup/plugin-commonjs')
+const cjs = require('rollup-plugin-cjs-es')
 const postcss = require('rollup-plugin-postcss')
 const postcssModules = require('postcss-modules')
 const image = require('@rollup/plugin-image')
 const replace = require('@rollup/plugin-replace')
+const json = require('rollup-plugin-json')
+const nodePolyfills = require('rollup-plugin-node-polyfills')
 //const peerDepsExternal = require('rollup-plugin-peer-deps-external')
 
 const cssExportMap = {};
@@ -66,33 +69,28 @@ var paths = pathsConfig()
 // rollup
 function build_dev(){
   return rollup.rollup({
+    // Do not compile these libraries in the final bundle.js. Loaded in html script tag.
+    external: ['react', 'react-dom'],
     input: `${paths.src}/index.js`,
+    // Rollup only understand ESM (ECMAScript 6) so the plugins will convert libraries in other format TS, JSON, CommonJS, etc., accordingly.
     plugins: [
       del({ targets: './public/dist/*' }),
+      json(),
       // Set env to compile React for dev or prod
       replace({
         //'process.env.NODE_ENV': JSON.stringify( 'production' )
         'process.env.NODE_ENV': JSON.stringify( 'development' )
       }),
-      babel(
-        {
-          presets: [
-            "@babel/preset-env", 
-            "@babel/preset-react"
-          ],
-          exclude: ['node_modules/**', '*.css', /.css$/],
-          ignore: ['*.css', /.(css|json|svg)$/],
-          babelHelpers: 'bundled',
-          plugins: [
-            "@babel/plugin-proposal-class-properties", // react class properties.
-            ["react-css-modules", {
-              autoResolveMultipleImports: true, 
-              generateScopedName: "[name]_[local]__[hash:base64:5]" // Should be the same as postcss-modules. TODO 1 underscore less.
-            }], 
-          ],
-          babelrc: false
-        }
-      ),
+      // resolve imports statements to libraries.
+      rollupResolve({
+        extensions: [ '.mjs', '.js', '.jsx', '.json', '.css'],
+        preferBuiltins: true,
+        browser: true, // https://github.com/axios/axios/issues/1692
+        // use "jsnext:main" if possible
+        // see https://github.com/rollup/rollup/wiki/jsnext:main
+        jsnext: true
+      }),
+
       //peerDepsExternal(),
       postcss({
         modules: true, // Enable CSS modules or set options for postcss-modules.
@@ -118,14 +116,33 @@ function build_dev(){
         modules: true,
         //use: ['sass'],
       }),
-      image(),
-      rollupResolve({
-        extensions: [ '.mjs', '.js', '.jsx', '.json', '.css'],
-        // use "jsnext:main" if possible
-        // see https://github.com/rollup/rollup/wiki/jsnext:main
-        jsnext: true
+      commonJs({
+        include: /node_modules/,
       }),
-      commonJs(),
+      nodePolyfills(),
+      babel(
+        {
+          presets: [
+            "@babel/preset-env",
+            "@babel/preset-react"
+          ],
+          exclude: ['/node_modules/', '*.css', /.css$/],
+          ignore: ['*.css', /.(css|json|svg)$/],
+          babelHelpers: 'bundled',
+          plugins: [
+            "@babel/plugin-proposal-class-properties", // react class properties.
+            ["react-css-modules", {
+              autoResolveMultipleImports: true,
+              generateScopedName: "[name]_[local]__[hash:base64:5]" // Should be the same as postcss-modules. TODO 1 underscore less.
+            }],
+          ],
+          babelrc: false
+        }
+      ),
+      //cjs({
+      //  nested: true
+      //}),
+      image(),
       //(process.env.NODE_ENV === 'production' && uglify()),
     ]
   }).then(function(bundle) {
@@ -144,7 +161,6 @@ function build_dev(){
 function imgCompression() {
   return src(`${paths.images}/*`)
     .pipe(imagemin()) // Compresses PNG, JPEG, GIF and SVG images
-  //.pipe(dest(`${paths.public}/images`))
     .pipe(dest(`${paths.public}/images/`))
 }
 
