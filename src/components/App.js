@@ -4,7 +4,7 @@ import cn from 'classnames';
 import bs from 'bootstrap/dist/css/bootstrap.css';
 import idxsty from '../styles/index.css';
 import styles from './App.css';
-
+//styles = Object.assign({}, bs)
 //const cx = cn.bind(styles);
 
 const todoItems = [
@@ -39,6 +39,11 @@ class App extends Component {
     super(props);
     this.state = {
       viewCompleted: false,
+      activeItem: {
+        title: "",
+        description: "",
+        completed: false
+      },
       todoList: todoItems
     };
   }
